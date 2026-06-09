@@ -40,8 +40,8 @@ export class ComputeStack extends cdk.Stack {
         const dailyCronRule = new events.Rule(this, 'DailyIngestCron', {
             schedule: events.Schedule.cron({
                 minute: '0',
-                hour: '22',
-                weekDay: 'MON-FRI'
+                hour: '8',
+                weekDay: 'TUE-SAT'
             }),
         });
 

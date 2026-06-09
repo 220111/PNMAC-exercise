@@ -25,15 +25,14 @@ const TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA"];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function getLastSevenClosedMarketDays(): string[] {
+function getLastSevenMarketDays(): string[] {
     const dates: string[] = [];
     const now = new Date();
 
     const nyTimeStr = now.toLocaleString("en-US", { timeZone: "America/New_York" });
     const nyDate = new Date(nyTimeStr);
 
-    const isMarketClosed = nyDate.getHours() >= 16;
-    let dayOffset = isMarketClosed ? 0 : 1;
+    let dayOffset = 1;
 
     while (dates.length < 7) {
         const targetDate = new Date(nyDate);
@@ -77,7 +76,7 @@ export const handler = async (event: ScheduledEvent, context: Context): Promise<
         const apiKey = secretResponse.SecretString;
         console.log("Successfully retrieved Massive API Key from Secrets Manager");
 
-        const targetDates = getLastSevenClosedMarketDays();
+        const targetDates = getLastSevenMarketDays();
 
         for (const ticker of TICKERS) {
             console.log("Verifying existing records and ingesting new records for ticker: ", ticker);
