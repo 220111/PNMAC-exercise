@@ -1,0 +1,7 @@
+{
+  "name": "pnmac-exercise",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}
