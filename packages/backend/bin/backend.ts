@@ -2,6 +2,7 @@
 import * as cdk from 'aws-cdk-lib/core';
 import { BaseStack } from '../lib/base-stack';
 import { ComputeStack } from '../lib/compute-stack';
+import { ApiStack } from '../lib/api-stack';
 
 const app = new cdk.App();
 
@@ -20,3 +21,9 @@ new ComputeStack(app, 'PNMACComputeStack', {
   apiSecret: base.apiSecret,
   sharedLogGroup: base.sharedLogGroup,
 })
+
+new ApiStack(app, 'PNMACApiStack', {
+  env,
+  ingestTable: base.ingestTable,
+  sharedLogGroup: base.sharedLogGroup, 
+});
