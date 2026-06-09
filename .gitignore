@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+npm-debug.log
+
+# Next.js Frontend
+packages/frontend/.next/
+packages/frontend/out/
+
+# AWS CDK Backend
+packages/backend/cdk.out/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS Files
+.DS_Store
+Thumbs.db
