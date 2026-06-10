@@ -61,8 +61,9 @@ jobs:
 
       # Deploy all backend & frontend infrastructure stacks and write output parameters to cdk-outputs.json
       - name: CDK Deploy Stacks
+        working-directory: packages/backend
         run: |
-          npm run cdk deploy --all --require-approval never --context stage=prod --outputs-file ../../cdk-outputs.json
+          npx cdk deploy --all --require-approval never --context stage=prod --outputs-file ../../cdk-outputs.json
 
       # Parse cdk-outputs.json to extract the API endpoint, S3 Bucket name, and CloudFront distribution ID
       - name: Extract Deployment Outputs
