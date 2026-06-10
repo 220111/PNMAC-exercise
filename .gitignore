@@ -19,3 +19,7 @@ packages/backend/cdk.out/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Temporary CLI / CDK output files
+*outputs.json
+response.json
