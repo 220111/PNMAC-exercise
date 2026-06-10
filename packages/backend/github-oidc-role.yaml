@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Configures AWS OIDC Identity Provider for GitHub Actions and creates a deployment IAM Role.'
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Description: 'The GitHub organization or username (case-sensitive).'
+    Default: 'hmorin'
+  RepositoryName:
+    Type: String
+    Description: 'The name of the GitHub repository (case-sensitive).'
+    Default: 'PNMAC-exercise'
+
+Resources:
+  # OIDC Provider for GitHub Actions (Only created if not already existing)
+  # NOTE: If your account already has this provider, you can safely skip this resource
+  # or import it, or just use the Role resource.
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  # Scoped IAM Role that GitHub Actions will assume
+  GitHubActionsWorkflowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: github-actions-deployer-role
+      Description: Role assumed by GitHub Actions to deploy the serverless pipeline backend and frontend.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+            Action: 'sts:AssumeRoleWithWebIdentity'
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
+              StringLike:
+                # Restricts access strictly to workflow runs originating from the main branch of your repo
+                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubOrg}/${RepositoryName}:ref:refs/heads/main'
+
+      # Standard IAM policies needed for CDK and static frontend deployment
+      Policies:
+        - PolicyName: GitHubActionsCDKDeploymentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Allow CDK Bootstrap & CloudFormation Operations
+              - Effect: Allow
+                Action: 'sts:AssumeRole'
+                Resource: 'arn:aws:iam::*:role/cdk-*'
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:DescribeStacks'
+                  - 'cloudformation:GetTemplate'
+                  - 's3:ListBucket'
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                  - 'cloudfront:CreateInvalidation'
+                  - 'ssm:GetParameter'
+                Resource: '*'
+
+Outputs:
+  RoleArn:
+    Description: 'ARN of the IAM Role for GitHub Actions'
+    Value: !GetAtt GitHubActionsWorkflowRole.Arn
