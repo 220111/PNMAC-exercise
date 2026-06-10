@@ -18,7 +18,7 @@ export function MetricsRow({ movers }: MetricsRowProps) {
   if (!totalDays) return null;
 
   const avgChange = movers.reduce((acc, curr) => acc + curr.percentChange, 0) / totalDays;
-  const topMover = [...movers].sort((a, b) => b.percentChange - a.percentChange)[0];
+  const topMover = [...movers].sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange))[0];
 
   const counts = movers.reduce((acc, m) => {
     acc[m.pk] = (acc[m.pk] || 0) + 1;
@@ -41,7 +41,7 @@ export function MetricsRow({ movers }: MetricsRowProps) {
 
       <Card size="sm">
         <CardHeader>
-          <CardDescription>Average Winner Gain</CardDescription>
+          <CardDescription>Average Mover Change</CardDescription>
           <CardTitle className="text-lg">
             <span className={avgChange >= 0 ? "text-emerald-600" : "text-red-600"}>
               {avgChange >= 0 ? "+" : ""}{avgChange.toFixed(2)}%
@@ -52,9 +52,12 @@ export function MetricsRow({ movers }: MetricsRowProps) {
 
       <Card size="sm">
         <CardHeader>
-          <CardDescription>Top Performer</CardDescription>
+          <CardDescription>Top Mover</CardDescription>
           <CardTitle className="text-lg">
-            {topMover.pk} <span className="text-xs font-normal text-emerald-600">+{topMover.percentChange.toFixed(2)}%</span>
+            {topMover.pk}{" "}
+            <span className={`text-xs font-normal ${topMover.percentChange >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+              {topMover.percentChange >= 0 ? "+" : ""}{topMover.percentChange.toFixed(2)}%
+            </span>
           </CardTitle>
         </CardHeader>
       </Card>

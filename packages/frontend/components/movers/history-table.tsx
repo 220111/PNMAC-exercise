@@ -30,7 +30,7 @@ export function HistoryTable({ movers, formatDate }: HistoryTableProps) {
       <CardHeader>
         <CardTitle>History Details</CardTitle>
         <CardDescription>
-          Chronological log of daily top performers
+          Chronological log of daily top movers
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">

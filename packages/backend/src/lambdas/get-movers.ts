@@ -52,7 +52,7 @@ export const handler = async (event: any) => {
         const dailyWinners = Object.keys(recordsByDate).map((date) => {
             const dayRecords = recordsByDate[date];
 
-            dayRecords.sort((a, b) => b.percentChange - a.percentChange);
+            dayRecords.sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange));
             
             return dayRecords[0]; 
         });
