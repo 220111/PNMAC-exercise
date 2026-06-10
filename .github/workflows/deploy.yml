@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-cache: 'npm'
+          cache: 'npm'
           node-version: 20
 
       - name: Install Monorepo Dependencies
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-cache: 'npm'
+          cache: 'npm'
           node-version: 20
 
       - name: Install Monorepo Dependencies
@@ -62,7 +62,7 @@ jobs:
       # Deploy all backend & frontend infrastructure stacks and write output parameters to cdk-outputs.json
       - name: CDK Deploy Stacks
         run: |
-          npx cdk deploy --all --require-approval never --context stage=prod --outputs-file cdk-outputs.json
+          npm run cdk deploy --all --require-approval never --context stage=prod --outputs-file ../../cdk-outputs.json
 
       # Parse cdk-outputs.json to extract the API endpoint, S3 Bucket name, and CloudFront distribution ID
       - name: Extract Deployment Outputs
