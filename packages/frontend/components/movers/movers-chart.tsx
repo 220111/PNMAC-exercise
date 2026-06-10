@@ -43,7 +43,7 @@ export function MoversChart({ movers, formatDate }: WinnersChartProps) {
       <CardHeader>
         <CardTitle>Daily Movers Performance</CardTitle>
         <CardDescription>
-          Comparing daily top performer gains/losses
+          Comparing daily top mover gains/losses
         </CardDescription>
       </CardHeader>
       <CardContent className="h-80 sm:h-96 pr-2 w-full overflow-hidden">

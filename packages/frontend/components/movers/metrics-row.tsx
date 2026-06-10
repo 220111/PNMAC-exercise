@@ -32,9 +32,9 @@ export function MetricsRow({ movers }: MetricsRowProps) {
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <Card size="sm">
         <CardHeader>
-          <CardDescription>Dominant Stock</CardDescription>
+          <CardDescription>Most Frequent Top Mover</CardDescription>
           <CardTitle className="text-lg">
-            {dominantSymbol} <span className="text-xs font-normal text-muted-foreground">({dominantCount} wins)</span>
+            {dominantSymbol} <span className="text-xs font-normal text-muted-foreground">({dominantCount} days)</span>
           </CardTitle>
         </CardHeader>
       </Card>
@@ -52,7 +52,7 @@ export function MetricsRow({ movers }: MetricsRowProps) {
 
       <Card size="sm">
         <CardHeader>
-          <CardDescription>Top Mover</CardDescription>
+          <CardDescription>Today&apos;s Top Mover</CardDescription>
           <CardTitle className="text-lg">
             {topMover.pk}{" "}
             <span className={`text-xs font-normal ${topMover.percentChange >= 0 ? "text-emerald-600" : "text-red-600"}`}>

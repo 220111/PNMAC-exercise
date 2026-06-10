@@ -29,7 +29,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://n4ljb93oae.execute-api.us-east-1.amazonaws.com/prod/";
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://k2hmhvdyu2.execute-api.us-east-1.amazonaws.com/prod/";
     const fetchUrl = apiBaseUrl.endsWith("/") ? `${apiBaseUrl}movers` : `${apiBaseUrl}/movers`;
 
     fetch(fetchUrl)
