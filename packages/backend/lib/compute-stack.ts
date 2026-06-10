@@ -46,5 +46,10 @@ export class ComputeStack extends cdk.Stack {
         });
 
         dailyCronRule.addTarget(new targets.LambdaFunction(this.ingestLambda));
+
+        new cdk.CfnOutput(this, 'IngestLambdaName', {
+            value: this.ingestLambda.functionName,
+            description: 'The physical name of the stock ingestion Lambda function',
+        });
     }
 }

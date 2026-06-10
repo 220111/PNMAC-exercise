@@ -17,13 +17,15 @@ export class BaseStack extends cdk.Stack {
             sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
         });
 
+        const stage = this.node.tryGetContext('stage') || 'prod';
+
         this.apiSecret = new secretsmanager.Secret(this, 'ExternalApiSecret', {
-            secretName: 'ingest/massive-api-key',
-            description: 'API key for stock data ingest from Massive',
+            secretName: `ingest/massive-api-key-${stage}`,
+            description: `API key for stock data ingest from Massive (${stage})`,
         });
 
         this.sharedLogGroup = new logs.LogGroup(this, 'SharedLambdaLogs', {
-            logGroupName: '/aws/lambda/pnmac-backend',
+            logGroupName: `/aws/lambda/pnmac-backend-${stage}`,
             retention: logs.RetentionDays.TWO_WEEKS,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });

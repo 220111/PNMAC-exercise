@@ -1,0 +1,103 @@
+name: CI/CD Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write   # Required for requesting JWT from GitHub OIDC provider
+  contents: read    # Required for checkout actions
+
+jobs:
+  test-and-lint:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-cache: 'npm'
+          node-version: 20
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Lint Frontend
+        run: npm run lint --workspace=frontend
+
+      - name: Run Backend Unit Tests
+        run: npm run test --workspace=backend
+
+  deploy:
+    name: Deploy to AWS (Prod)
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-cache: 'npm'
+          node-version: 20
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Compile Backend TypeScript
+        run: npm run build --workspace=backend
+
+      - name: Authenticate with AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+
+      # Deploy all backend & frontend infrastructure stacks and write output parameters to cdk-outputs.json
+      - name: CDK Deploy Stacks
+        run: |
+          npx cdk deploy --all --require-approval never --context stage=prod --outputs-file cdk-outputs.json
+
+      # Parse cdk-outputs.json to extract the API endpoint, S3 Bucket name, and CloudFront distribution ID
+      - name: Extract Deployment Outputs
+        id: cdk-outputs
+        run: |
+          API_URL=$(jq -r '."PNMACApiStack-prod".ApiEndpointUrl' cdk-outputs.json)
+          BUCKET_NAME=$(jq -r '."PNMACFrontendStack-prod".FrontendBucketName' cdk-outputs.json)
+          DISTRIBUTION_ID=$(jq -r '."PNMACFrontendStack-prod".CloudFrontDistributionId' cdk-outputs.json)
+          
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+          echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+          
+          echo "Successfully extracted parameters:"
+          echo "  API Gateway URL: $API_URL"
+          echo "  S3 Bucket Name: $BUCKET_NAME"
+          echo "  CloudFront ID: $DISTRIBUTION_ID"
+
+      # Build and export the frontend with NEXT_PUBLIC_API_URL set to the captured API URL
+      - name: Build Next.js Frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ steps.cdk-outputs.outputs.api_url }}
+        run: |
+          npm run build --workspace=frontend
+
+      # Upload Next.js static exported folder to S3 bucket
+      - name: Sync Frontend Assets to S3
+        env:
+          BUCKET_NAME: ${{ steps.cdk-outputs.outputs.bucket_name }}
+        run: |
+          aws s3 sync packages/frontend/out/ s3://$BUCKET_NAME/ --delete
+
+      # Invalidate CloudFront CDN Cache so changes are visible instantly
+      - name: Invalidate CloudFront Cache
+        env:
+          DISTRIBUTION_ID: ${{ steps.cdk-outputs.outputs.distribution_id }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"

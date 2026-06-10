@@ -29,7 +29,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("https://n4ljb93oae.execute-api.us-east-1.amazonaws.com/prod/movers")
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://n4ljb93oae.execute-api.us-east-1.amazonaws.com/prod/";
+    const fetchUrl = apiBaseUrl.endsWith("/") ? `${apiBaseUrl}movers` : `${apiBaseUrl}/movers`;
+
+    fetch(fetchUrl)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch market data");
         return res.json();
