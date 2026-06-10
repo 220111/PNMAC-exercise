@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { MoversHeader } from "@/components/movers/movers-header";
 import { MetricsRow } from "@/components/movers/metrics-row";
-import { WinnersChart } from "@/components/movers/winners-chart";
+import { MoversChart } from "@/components/movers/movers-chart";
 import { HistoryTable } from "@/components/movers/history-table";
 
 interface Mover {
@@ -63,7 +63,7 @@ export default function Home() {
       {!error && movers.length > 0 && (
         <>
           <MetricsRow movers={movers} />
-          <WinnersChart movers={movers} formatDate={formatDate} />
+          <MoversChart movers={movers} formatDate={formatDate} />
           <HistoryTable movers={movers} formatDate={formatDate} />
         </>
       )}

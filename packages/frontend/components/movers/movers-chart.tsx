@@ -27,7 +27,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function WinnersChart({ movers, formatDate }: WinnersChartProps) {
+export function MoversChart({ movers, formatDate }: WinnersChartProps) {
   if (movers.length === 0) return null;
 
   const chartData = [...movers]
@@ -41,7 +41,7 @@ export function WinnersChart({ movers, formatDate }: WinnersChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Daily Winners Performance</CardTitle>
+        <CardTitle>Daily Movers Performance</CardTitle>
         <CardDescription>
           Comparing daily top performer gains/losses
         </CardDescription>
