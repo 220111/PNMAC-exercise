@@ -95,13 +95,18 @@ aws cloudformation describe-stacks \
 2. Add a repository secret named `AWS_ROLE_ARN` containing the Role ARN output from Step 2.
 
 ### Step 4: Run Deploy
-Pushing to the `main` branch triggers the deploy workflow (`deploy.yml`), which:
+Pushing to the `main` branch triggers the deploy workflow which:
 1. Runs the linter and unit tests.
-2. Deploys the production CDK stacks (`cdk deploy --all --context stage=prod`).
-3. Captures the generated API Gateway URL.
+2. Deploys the production CDK stacks with the `prod` stage.
+3. Collects the generated API Gateway URL.
 4. Builds the frontend static site with the API URL injected as `NEXT_PUBLIC_API_URL`.
 5. Syncs static files to the S3 bucket.
 6. Invalidates CloudFront cache.
+
+### Step 5: Put Massive API key in Secret Manager
+```bash
+aws secretsmanager put-secret-value --secret-id ingest/massive-api-key-prod --secret-string "YOUR_MASSIVE_API_KEY"
+```
 
 ### Step 5: (Optional) Trigger Production Ingestion
 If you want to manually trigger the ingestion Lambda in production immediately (rather than waiting for the nightly Cron):

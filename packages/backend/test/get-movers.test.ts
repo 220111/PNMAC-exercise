@@ -61,6 +61,52 @@ describe('get-movers Lambda Handler', () => {
         expect(body.data[0].percentChange).toBe(-4.5);
     });
 
+    it('should set Cache-Control max-age to 60 seconds if data has less than 7 items', async () => {
+        ddbMock.on(QueryCommandClass).resolves({
+            Items: [
+                { pk: 'AAPL', sk: '2026-06-09', close: 180, percentChange: 1.5 }
+            ]
+        });
+
+        const { handler } = require('../src/lambdas/get-movers');
+        const response = await handler({});
+        expect(response.statusCode).toBe(200);
+        expect(response.headers['Cache-Control']).toBe('public, max-age=60');
+    });
+
+    it('should set Cache-Control max-age to next refresh time if data has 7 items', async () => {
+        ddbMock.on(QueryCommandClass).callsFake((command: any) => {
+            const ticker = command.ExpressionAttributeValues?.[':pk'];
+            if (ticker === 'AAPL') {
+                return {
+                    Items: [
+                        { pk: 'AAPL', sk: '2026-06-09', close: 180, percentChange: 1.5 },
+                        { pk: 'AAPL', sk: '2026-06-08', close: 178, percentChange: 1.2 },
+                        { pk: 'AAPL', sk: '2026-06-07', close: 176, percentChange: 1.0 },
+                        { pk: 'AAPL', sk: '2026-06-06', close: 174, percentChange: 0.8 },
+                        { pk: 'AAPL', sk: '2026-06-05', close: 172, percentChange: 0.6 },
+                        { pk: 'AAPL', sk: '2026-06-04', close: 170, percentChange: 0.4 },
+                        { pk: 'AAPL', sk: '2026-06-03', close: 168, percentChange: 0.2 },
+                    ]
+                };
+            }
+            return { Items: [] };
+        });
+
+        const { handler } = require('../src/lambdas/get-movers');
+        const response = await handler({});
+        expect(response.statusCode).toBe(200);
+        
+        const cacheControl = response.headers['Cache-Control'];
+        expect(cacheControl).toBeDefined();
+        expect(cacheControl).not.toBe('public, max-age=60');
+        
+        const match = cacheControl.match(/max-age=(\d+)/);
+        expect(match).not.toBeNull();
+        const maxAge = parseInt(match[1], 10);
+        expect(maxAge).toBeGreaterThan(60);
+    });
+
     it('should return 500 error if query fails', async () => {
         ddbMock.on(QueryCommandClass).rejects(new Error('DynamoDB Error'));
 

@@ -14,7 +14,9 @@ export const handler = async (event: any) => {
 
         const now = Date.now();
 
-        if (cachedMovers && now < cacheExpirationTimestamp) {
+        // if cachedMovers is less than 7 then it's likely the ingest is still running its initial batch
+        // and we should revalidate the cache
+        if (cachedMovers && now < cacheExpirationTimestamp && cachedMovers.length == 7) {
             console.log("Cache Hit: Returning data from lambda memory");
             return createResponse(cachedMovers, cacheExpirationTimestamp);
         }
@@ -77,8 +79,15 @@ export const handler = async (event: any) => {
 }
 
 // sends back success response with browser cache control header that expires at expirationMs
+//
+// if data has less than one week of data points then cache should expire in a minute,
+// when more data is likely to be available
 function createResponse(data: any, expirationMs: number) {
-  const secondsUntilRefresh = Math.max(0, Math.floor((expirationMs - Date.now()) / 1000));
+  let secondsUntilRefresh = Math.max(0, Math.floor((expirationMs - Date.now()) / 1000));
+
+  if (data.length < 7) {
+    secondsUntilRefresh = 60;
+  }
 
   return {
     statusCode: 200,
