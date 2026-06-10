@@ -53,18 +53,18 @@ Resources:
             Statement:
               # Allow CDK Bootstrap & CloudFormation Operations
               - Effect: Allow
+                Action: 'sts:AssumeRole'
+                Resource: 'arn:aws:iam::*:role/cdk-*'
+              - Effect: Allow
                 Action:
-                  - 'cloudformation:*'
-                  - 's3:*'
-                  - 'sts:AssumeRole'
-                  - 'iam:*'
-                  - 'lambda:*'
-                  - 'apigateway:*'
-                  - 'dynamodb:*'
-                  - 'events:*'
-                  - 'secretsmanager:*'
-                  - 'cloudfront:*'
-                  - 'logs:*'
+                  - 'cloudformation:DescribeStacks'
+                  - 'cloudformation:GetTemplate'
+                  - 's3:ListBucket'
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                  - 'cloudfront:CreateInvalidation'
+                  - 'ssm:GetParameter'
                 Resource: '*'
 
 Outputs:
