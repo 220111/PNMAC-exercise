@@ -56,6 +56,7 @@ export function MoversChart({ movers, formatDate }: WinnersChartProps) {
             <CartesianGrid horizontal={false} strokeDasharray="3 3" />
             <XAxis
               type="number"
+              domain={["dataMin - 3", "dataMax + 3"]}
               tickLine={false}
               axisLine={false}
               tickFormatter={(val) => `${val}%`}
