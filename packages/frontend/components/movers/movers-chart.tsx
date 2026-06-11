@@ -7,7 +7,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from "recharts";
 
 interface Mover {
   pk: string;
@@ -31,11 +31,11 @@ export function MoversChart({ movers, formatDate }: WinnersChartProps) {
   if (movers.length === 0) return null;
 
   const chartData = [...movers]
-    .sort((a, b) => a.sk.localeCompare(b.sk))
+    .sort((a, b) => b.sk.localeCompare(a.sk))
     .map((item) => ({
       ...item,
       formattedDate: formatDate(item.sk),
-      rowLabel: `${item.pk} (${formatDate(item.sk)})`,
+      rowLabel: `${formatDate(item.sk)}`,
     }));
 
   return (
@@ -104,6 +104,20 @@ export function MoversChart({ movers, formatDate }: WinnersChartProps) {
                   fill={entry.percentChange >= 0 ? "oklch(0.65 0.18 140)" : "oklch(0.6 0.18 29)"}
                 />
               ))}
+              <LabelList
+                dataKey="pk"
+                position="insideLeft"
+                offset={8}
+                className="fill-accent"
+                fontSize={12}
+              />
+              <LabelList
+                dataKey="percentChange"
+                position="right"
+                offset={8}
+                className="fill-foreground"
+                fontSize={12}
+              />
             </Bar>
           </BarChart>
         </ChartContainer>
