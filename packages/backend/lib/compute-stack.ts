@@ -35,7 +35,7 @@ export class ComputeStack extends cdk.Stack {
         props.ingestTable.grantReadWriteData(this.ingestLambda);
         props.apiSecret.grantRead(this.ingestLambda);
 
-        //run weekdays at 22:00 UTC which should be plenty of time after market close
+        //runs mornings after market days at 08:00 UTC to give time for api to allow access to trading day summary
         //the function has logic to ensure only valid market dates are stored but better to not run too often
         const dailyCronRule = new events.Rule(this, 'DailyIngestCron', {
             schedule: events.Schedule.cron({

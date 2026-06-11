@@ -25,6 +25,10 @@ const TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA"];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Note: this gets the last 7 days that COULD be market days
+// It does not account for market holidays. 
+// These days will fail from the API and the function will log the issue and move on.
+// Any actual failures will be logged and self-healed the following days.
 function getLastSevenMarketDays(): string[] {
     const dates: string[] = [];
     const now = new Date();
@@ -110,6 +114,10 @@ export const handler = async (event: ScheduledEvent, context: Context): Promise<
 
                     // Massive free tier rate limit of 5 requests per minute
                     // Simple run until rate limit and then wait the full timeout logic
+                    // 
+                    // Note: This is only a single retry but is safe due to self-healing.
+                    //       Any dates that hit the rate limit twice will be filled in the next day.
+                    //       This is all logged.
                     if (response.status === 429) {
                         console.warn(`Rate limit hit (429). Waiting for 65 seconds before retrying...`);
                         await sleep(65000);

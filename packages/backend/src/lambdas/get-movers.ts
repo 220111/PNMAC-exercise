@@ -51,7 +51,7 @@ export const handler = async (event: any) => {
             recordsByDate[date].push(record);
         }
 
-        const dailyWinners = Object.keys(recordsByDate).map((date) => {
+        const dailyMovers = Object.keys(recordsByDate).map((date) => {
             const dayRecords = recordsByDate[date];
 
             dayRecords.sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange));
@@ -59,12 +59,12 @@ export const handler = async (event: any) => {
             return dayRecords[0]; 
         });
 
-        dailyWinners.sort((a, b) => b.sk.localeCompare(a.sk));
+        const topMovers = dailyMovers.sort((a, b) => b.sk.localeCompare(a.sk)).slice(0, 7);
 
-        cachedMovers = dailyWinners;
+        cachedMovers = topMovers;
         cacheExpirationTimestamp = getNextRefreshTime();
 
-        return createResponse(dailyWinners, cacheExpirationTimestamp);
+        return createResponse(topMovers, cacheExpirationTimestamp);
     } catch (error) {
         console.error("Error fetching movers:", error);
         return {

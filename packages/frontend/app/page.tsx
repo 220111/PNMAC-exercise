@@ -24,12 +24,14 @@ const formatDate = (dateStr: string) => {
 };
 
 export default function Home() {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
   const [movers, setMovers] = useState<Mover[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "https://k2hmhvdyu2.execute-api.us-east-1.amazonaws.com/prod/";
+    if (!apiBaseUrl) return;
+
     const fetchUrl = apiBaseUrl.endsWith("/") ? `${apiBaseUrl}movers` : `${apiBaseUrl}/movers`;
 
     fetch(fetchUrl)
@@ -43,7 +45,18 @@ export default function Home() {
       })
       .catch((err) => setError(err.message || "An unexpected error occurred."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [apiBaseUrl]);
+
+  if (!apiBaseUrl) {
+    return (
+      <main className="max-w-4xl mx-auto p-4 sm:p-8 space-y-6 sm:space-y-8 w-full overflow-hidden">
+        <MoversHeader />
+        <div className="p-4 rounded border border-destructive bg-destructive/10 text-xs text-destructive">
+          Error: Unable to access server. NEXT_PUBLIC_API_URL is not set.
+        </div>
+      </main>
+    );
+  }
 
   if (loading) {
     return (

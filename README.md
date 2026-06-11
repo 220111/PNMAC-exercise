@@ -2,6 +2,34 @@
 
 Monorepo containing a serverless data ingestion pipeline and a Next.js dashboard tracking stock movements for the watchlist: `["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA"]`.
 
+**Live demo:** https://dnoboxo83bc62.cloudfront.net/
+
+## Architecture
+
+The CDK app is split into four stacks so that ingestion and retrieval are deployed and changed independently:
+
+| Stack | Resources | Purpose |
+|---|---|---|
+| `PNMACBaseStack` | DynamoDB table, Secrets Manager secret, shared log group | Base resources shared by both sides |
+| `PNMACComputeStack` | Ingest Lambda, EventBridge cron | Ingestion: fetches daily data and writes to DynamoDB |
+| `PNMACApiStack` | API Gateway, Get Movers Lambda | Retrieval: returns the last 7 days of top movers |
+| `PNMACFrontendStack` | S3 bucket, CloudFront distribution (OAC) | Hosts the built static frontend over HTTPS |
+
+All stacks are parameterized by a `stage` context value (`dev`/`prod`) for isolated environments.
+
+## Design Decisions & Trade-offs
+
+- **Stores all tickers daily and computes the largest movers at read time.** The ingest Lambda stores the percent change for all 6 tickers each day rather than just the daily winner. This keeps the raw data so the definition of "top mover" can change without re-ingesting (which happened mid-project: max gain -> max absolute change), and it enables self-healing backfill. The cost is 6 DynamoDB queries per API call instead of 1, but this is mitigated by caching.
+- **Self-healing ingestion.** Each run compares the last 7 market days against what's already in DynamoDB and only fetches missing dates. If the external API fails or overly rate limits on a given day, the gap is filled automatically on the next run. The rate-limit handler only retries once because tomorrow's run will recover it.
+- **Caching.** The Get Movers Lambda keeps an in-memory cache and sets a `Cache-Control` header that expires shortly after the next scheduled ingest, so browsers and the Lambda both avoid redundant DynamoDB reads. Because we are only looking at data that's updated daily, this is a safe and good fit choice.
+- **Data model.** `pk=ticker, sk=date` keeps writes and per-ticker queries simple at watchlist scale (6 tickers). For a much larger watchlist I would add a precomputed daily-winner item written at ingest time so the API reads a single partition.
+- **OIDC for CI/CD.** GitHub Actions assumes a short-lived IAM role scoped to this repo's `main` branch. This means no long lived AWS keys stored in GitHub.
+
+## Known Limitations
+
+- Market holidays are not modeled. The helpers exclude weekends but not market holidays. Holiday dates get requested, fail with a logged error, and are skipped. Fixing this properly means a market calendar (API or library), which felt out of scope for the exercise.
+- The initial backfill is slow (~10 minutes) because the free Massive API only allows 5 requests per minute and the first run fetches 7 days × 6 tickers.
+
 ## Project Structure
 
 ```
@@ -28,7 +56,14 @@ npm test
 ```
 
 ### 3. Run frontend locally
-Starts the local Next.js development server:
+Before starting the frontend, you must set the `NEXT_PUBLIC_API_URL` environment variable so the app knows where to fetch market data from. You can do this by creating a `.env.local` file in the `packages/frontend` directory:
+
+```bash
+# packages/frontend/.env.local
+NEXT_PUBLIC_API_URL=https://<your-api-id>.execute-api.<region>.amazonaws.com/prod/
+```
+
+Then, start the local Next.js development server:
 ```bash
 npm run dev
 ```
@@ -108,7 +143,7 @@ Pushing to the `main` branch triggers the deploy workflow which:
 aws secretsmanager put-secret-value --secret-id ingest/massive-api-key-prod --secret-string "YOUR_MASSIVE_API_KEY"
 ```
 
-### Step 5: (Optional) Trigger Production Ingestion
+### Step 6: (Optional) Trigger Production Ingestion
 If you want to manually trigger the ingestion Lambda in production immediately (rather than waiting for the nightly Cron):
 ```bash
 npm run cdk:trigger-prod

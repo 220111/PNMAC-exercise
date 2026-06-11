@@ -18,7 +18,7 @@ export function MetricsRow({ movers }: MetricsRowProps) {
   if (!totalDays) return null;
 
   const avgChange = movers.reduce((acc, curr) => acc + curr.percentChange, 0) / totalDays;
-  const topMover = [...movers].sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange))[0];
+  const topMover = movers[0];
 
   const counts = movers.reduce((acc, m) => {
     acc[m.pk] = (acc[m.pk] || 0) + 1;

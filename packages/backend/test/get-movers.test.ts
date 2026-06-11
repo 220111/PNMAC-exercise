@@ -107,6 +107,40 @@ describe('get-movers Lambda Handler', () => {
         expect(maxAge).toBeGreaterThan(60);
     });
 
+    it('should cap the response at the 7 most recent days when ticker histories are misaligned', async () => {
+        // AAPL has records for 2026-06-03 through 2026-06-09, TSLA for 2026-06-02 through 2026-06-08.
+        // The union spans 8 distinct dates, but the response should only contain the 7 most recent.
+        const buildItems = (ticker: string, startDay: number) => {
+            const items = [];
+            for (let i = 0; i < 7; i++) {
+                const day = String(startDay - i).padStart(2, '0');
+                items.push({ pk: ticker, sk: `2026-06-${day}`, close: 100 + i, percentChange: 1.0 });
+            }
+            return items;
+        };
+
+        ddbMock.on(QueryCommandClass).callsFake((command: any) => {
+            const ticker = command.ExpressionAttributeValues?.[':pk'];
+            if (ticker === 'AAPL') return { Items: buildItems('AAPL', 9) };
+            if (ticker === 'TSLA') return { Items: buildItems('TSLA', 8) };
+            return { Items: [] };
+        });
+
+        const { handler } = require('../src/lambdas/get-movers');
+        const response = await handler({});
+        expect(response.statusCode).toBe(200);
+
+        const body = JSON.parse(response.body);
+        expect(body.count).toBe(7);
+        expect(body.data.length).toBe(7);
+
+        // Newest first, and the oldest date (2026-06-02) should be the one dropped
+        expect(body.data[0].sk).toBe('2026-06-09');
+        expect(body.data[6].sk).toBe('2026-06-03');
+        const dates = body.data.map((item: any) => item.sk);
+        expect(dates).not.toContain('2026-06-02');
+    });
+
     it('should return 500 error if query fails', async () => {
         ddbMock.on(QueryCommandClass).rejects(new Error('DynamoDB Error'));
 
